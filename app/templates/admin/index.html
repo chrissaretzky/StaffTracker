@@ -1,0 +1,48 @@
+{% extends 'layouts/base.html' %}
+
+{% macro dashboard_option(title, endpoint, description=None, icon=None, active=True, value=0) %}
+    <a class="column" href="{{ url_for(endpoint) }}">
+    {% if active %}
+        <div class="ui padded segment">
+    {% else %}
+        <div class="ui padded segment" style="opacity:0.5">
+    {% endif %}
+            <h3 class="ui header">
+                {% if icon is not none %}
+                    <i class="{{ icon }}"></i>
+                {% endif %}
+                <div class="content">
+                    <div class="header">
+                    {{ title }}
+                    {% if value > 0 %}
+                        :<span style="color:red">{{ value }}</span>
+                    </div>
+                    {% endif %}
+                    {% if description is not none %}
+                        <div class="sub header">
+                             {{ description }}
+                        </div>
+                    {% endif %}
+                </div>
+            </h3>
+        </div>
+    </a>
+{% endmacro %}
+
+{% block content %}
+    <div class="ui stackable centered grid container">
+        <div class="twelve wide column">
+            <h2 class="ui header">
+                Admin Dashboard
+            </h2>
+            <div class="ui one column stackable grid">
+                {{ dashboard_option('User Information', 'admin.registered_users',
+                                    description='View and manage user accounts', icon='users icon') }}
+                {{ dashboard_option('Add New User', 'admin.new_user',
+                                    description='Create a new user account', icon='add user icon') }}
+                {{ dashboard_option('Unconfirmed Users', 'admin.unconfirmed_users',
+                                    description='Finish setting up new users', icon='users icon', value=cnt_unconf_users, active=(True if cnt_unconf_users > 0 else False)) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}
