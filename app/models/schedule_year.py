@@ -13,12 +13,3 @@ class Schedule_year(db.Model):
     pay_periods = db.relationship('Pay_period', backref='year')
     avg_periods = db.relationship('Avg_period', backref='year')
     stats = db.relationship('Stat_day', backref='year')
-
-    def create_first_year():
-        year = Schedule_year()
-        year.year = '2018'
-        year.start_date = '2017-12-31'
-        year.end_date = '2018-12-31'
-        year.iscurrent = True
-        db.session.add(year)
-        db.session.commit()

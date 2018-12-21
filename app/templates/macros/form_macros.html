@@ -19,7 +19,11 @@
 
     {{ begin_form(form, flashes, method=method, extra_classes=extra_classes, enctype=enctype) }}
         {% for field in form if not (is_hidden_field(field) or field.type == 'SubmitField') %}
-            {{ render_form_field(field) }}
+            {% if field.type == 'DateField' %}
+                {{ render_form_field(field, 'date_picker') }}
+            {% else %}
+                {{ render_form_field(field) }}
+            {% endif %}
         {% endfor %}
 
         {{ form_message(flashes['error'], header='Something went wrong.', class='error') }}
@@ -137,6 +141,10 @@
         {{ field(class='ui button') }}
     {% elif field.type == 'FormField' %}
         {{ render_form(field) }}
+    {% elif field.type == 'DateTimeField' %}
+        {{ field(autocomplete='off', placeholder='HH-MM') }}
+    {% elif field.type == 'DateField' %}
+        {{ field(autocomplete='off', placeholder='MM-DD-YYYY') }}
     {% elif field.type == 'CustomSelectField' %}
         {{ render_custom_select(field) }}
     {% else %}

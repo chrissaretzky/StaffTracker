@@ -1,25 +1,69 @@
-@media -sass-debug-info{filename{}line{font-family:\000037}}
-nav {
-  margin-bottom: 40px !important;
-}
-
-@media -sass-debug-info{filename{}line{font-family:\0000312}}
-.ui.fixed.main.menu .right.menu > .item:last-of-type {
-  border-right: 1px solid rgba(34, 36, 38, 0.0980392);
-}
-
-@media -sass-debug-info{filename{}line{font-family:\0000318}}
-nav .mobile.only.row .ui.vertical.menu {
-  margin-top: 40px;
-  display: none;
-}
-
-@media -sass-debug-info{filename{}line{font-family:\0000325}}
-.flashes > .ui.message:last-of-type {
-  margin-bottom: 2rem;
-}
-
-@media -sass-debug-info{filename{}line{font-family:\0000330}}
-table.selectable tr:hover {
-  cursor: pointer !important;
-}
+@media -sass-debug-info{filename{}line{font-family:\000037}}
+nav {
+  margin-bottom: 40px !important;
+}
+
+@media -sass-debug-info{filename{}line{font-family:\0000312}}
+.ui.fixed.main.menu .right.menu > .item:last-of-type {
+  border-right: 1px solid rgba(34, 36, 38, 0.0980392);
+}
+
+@media -sass-debug-info{filename{}line{font-family:\0000318}}
+nav .mobile.only.row .ui.vertical.menu {
+  margin-top: 40px;
+  display: none;
+}
+
+@media -sass-debug-info{filename{}line{font-family:\0000325}}
+.flashes > .ui.message:last-of-type {
+  margin-bottom: 2rem;
+}
+
+@media -sass-debug-info{filename{}line{font-family:\0000330}}
+table.selectable tr:hover {
+  cursor: pointer !important;
+}
+
+@media -sass-debug-info{filename{}line{font-family:\0000334}}
+.inactive {
+  opacity: 0.5;
+}
+
+@media -sass-debug-info{filename{}line{font-family:\0000338}}
+.tableselect {
+  margin-right: 10px;
+}
+
+@media -sass-debug-info{filename{}line{font-family:\0000342}}
+.tablecheck {
+  margin-left: 10px;
+}
+
+@media -sass-debug-info{filename{}line{font-family:\0000346}}
+.date_picker {
+  margin-right: 10px;
+}
+
+@media -sass-debug-info{filename{}line{font-family:\0000350}}
+.ic {
+  color: #2087cd;
+  font-weight: bold;
+}
+
+@media -sass-debug-info{filename{}line{font-family:\0000355}}
+.banked {
+  color: #fbbc31;
+  font-weight: bold;
+}
+
+@media -sass-debug-info{filename{}line{font-family:\0000360}}
+.paid {
+  color: #f27126;
+  font-weight: bold;
+}
+
+@media -sass-debug-info{filename{}line{font-family:\0000365}}
+.training {
+  color: #a43bc3;
+  font-weight: bold;
+}

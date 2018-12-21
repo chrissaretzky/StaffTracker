@@ -1,0 +1,181 @@
+{% extends 'layouts/user.html' %}
+
+{% block user %}
+    <div class="row">
+    </div><br>
+        <div class="row">
+            <div id="s" class="four fields">
+                <div class="ui input date_picker"><input placeholder="Start" type="text" id="min" /></div><div class="ui input date_picker"><input placeholder="End" type="text" id="max" /></div>
+            </div><br>
+            <div class="six fields">
+                <div class="ui label">
+                  Total Hours
+                  <div id="hours" class="detail"></div>
+                </div>
+                <div class="ui blue label">
+                  IC
+                  <div id="ic" class="detail"></div>
+                </div>
+                <div class="ui orange label">
+                  Paid OT
+                  <div id="paid" class="detail"></div>
+                </div>
+                <div class="ui yellow label">
+                  Banked OT
+                  <div id="banked" class="detail"></div>
+                </div>
+                <div class="ui purple label">
+                  Training
+                  <div id="training" class="detail"></div>
+                </div>
+            </div>
+        </div><br>
+        <div>
+            <table class="ui celled selectable table shift_records_table">
+                <thead>
+                    <tr>
+                        <th hidden>hhours</th>
+                        <th>Day<i class="caret down icon"></i></th>
+                        <th hidden>Employee<i class="caret down icon"></i></th>
+                        <th>Start<i class="caret down icon"></i></th>
+                        <th>End<i class="caret down icon"></i></th>
+                        <th>Team<i class="caret down icon"></i></th>
+                        <th hidden>Role<i class="caret down icon"></i></th>
+                        <th hidden>IC<i class="caret down icon"></i></th>
+                        <th hidden>Banked OT<i class="caret down icon"></i></th>
+                        <th hidden>Paid OT<i class="caret down icon"></i></th>
+                        <th hidden>Comments<i class="caret down icon"></i></th>
+                        <th hidden>Training</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for s in shifts %}
+                    <tr>
+                        <td hidden>{{ s.hours }}</td>
+                        <td>{{ s.day }}</td>
+                        <td hidden>{{ s.schedule.user.first_name}} {{ s.schedule.user.last_name[0] }}</td>
+                        <td>{{ s.start_time }}</td>
+                        <td>{{ s.end_time }}</td>
+                        <td>{{ s.schedule.user.team.name}}</td>
+                        <td hidden>{{ s.schedule.user.role.name}}</td>
+                        <td hidden>{{ s.isic }}</td>
+                        <td hidden>{{ s.otbanked }}</td>
+                        <td hidden>{{ s.otpaid }}</td>
+                        <td hidden>{{ s.comment }}</td>
+                        <td hidden>{{ s.training }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    $(document).ready( function () {
+        $('.shift_records_table').DataTable({
+            createdRow: function( row, data, dataIndex){
+                if( data[7] == `True`){
+                    $(row).addClass('ic');
+                }
+
+                if( data[8] == `True`){
+                    $(row).addClass('banked');
+                }
+
+                if( data[9] == `True`){
+                    $(row).addClass('paid');
+                }
+
+                if( data[11] == `True`){
+                    $(row).addClass('training');
+                }
+            },
+            drawCallback: function( settings ) {
+                var api = new $.fn.dataTable.Api( settings );
+
+                $('#hours').text(calcTotalHours(api.rows( {page:'current'} ).data()));
+                $('#ic').text(calcTotalHours(api.rows( {page:'current'} ).data().filter(function(value){
+                        if ( value[7] == 'True' )
+                        {
+                            return true;
+                        }
+                        return false;
+                })));
+                $('#banked').text(calcTotalHours(api.rows( {page:'current'} ).data().filter(function(value){
+                        if ( value[8] == 'True' )
+                        {
+                            return true;
+                        }
+                        return false;
+                })));
+                $('#paid').text(calcTotalHours(api.rows( {page:'current'} ).data().filter(function(value){
+                        if ( value[9] == 'True' )
+                        {
+                            return true;
+                        }
+                        return false;
+                })));
+                $('#training').text(calcTotalHours(api.rows( {page:'current'} ).data().filter(function(value){
+                        if ( value[11] == 'True' )
+                        {
+                            return true;
+                        }
+                        return false;
+                })));
+            },
+            "paging": false,
+            "dom": "<'ui stackable grid'"+
+                        "<'row dt-table'"+
+                            "<'sixteen wide column'tr>"+
+                        ">"+
+                    ">",
+            initComplete: function () {
+                createRangeSelector(this)
+                }
+            })
+        })
+
+
+    $.fn.dataTable.ext.search.push(
+        function( settings, data, dataIndex ) {
+            var min = new Date($('#min').val());
+            var max = new Date($('#max').val());
+            var data = new Date(data[1]);
+            if ( ( isNaN( min ) && isNaN( max ) ) ||
+                 ( isNaN( min ) && data <= max ) ||
+                 ( min <= data   && isNaN( max ) ) ||
+                 ( min <= data   && data <= max ) )
+            {
+                return true;
+            }
+            return false;
+        }
+    );
+
+    function calcTotalHours(data){
+      total = 0
+
+      data.each(function(d){
+        total += parseInt(d[0])
+      })
+      return total
+    }
+
+    function filterByDateByOTPaid(value){
+      if ( filterByDate(value) && value[6] == 'True')
+      {
+          return true;
+      }
+      return false;
+    }
+
+    function createRangeSelector(dt){
+        $('#min').val(moment().subtract(30, 'days').format('MM-D-YYYY'))
+        $('#max').val(moment().format('MM-D-YYYY'))
+        dt.api().draw()
+        $('#min, #max').blur(function() {
+            dt.api().draw();
+        })
+    }
+</script>
+{% endblock %}

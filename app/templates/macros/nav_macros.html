@@ -20,14 +20,19 @@
 #}
 
 {% macro header_items(current_user) %}
-    {% set endpoints = [
-      ('main.index', config.APP_NAME, 'home'),
-      ('main.about', 'About', 'info')
-    ]%}
-    {% set user = [] %}
-    {% if current_user.is_authenticated %}
+    {% if not current_user.is_anonymous %}
+      {% set user = [] %}
+      {% if current_user.role.name == 'User' %}
+        {% set endpoints = [
+          ('user.index', 'User-Dashboard', 'home'),
+        ]%}
+      {% elif current_user.role.name == 'Administrator' %}
+        {% set endpoints = [
+          ('admin.index', 'Admin-Dashboard', 'home'),
+        ]%}
+      {% endif %}
+      {{ render_menu_items( endpoints +  user ) }}
     {% endif %}
-    {{ render_menu_items( endpoints +  user ) }}
 {% endmacro %}
 
 {# This renders the right hand side of the navigation bar. If the user is logged in, it links to
@@ -84,7 +89,9 @@
     <div class="computer tablet only row">
         <div class="ui fixed inverted black main menu">
             <div class="ui container">
-                {{ header_items(current_user) }}
+                {% if not current_user.is_anonymous %}
+                  {{ header_items(current_user) }}
+                {% endif %}
                 {{ create_dropdown(dropdown) }}
                 <div class="right menu">
                     {{ account_items(current_user) }}

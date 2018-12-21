@@ -1,20 +1,74 @@
-from flask import (
-    Blueprint,
-    abort,
-    flash,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
+from flask import (Blueprint, abort, flash, redirect, render_template, request,
+                   url_for)
 from flask_login import current_user, login_required
 
 from app import db
-from app.admin.forms import (ChangeAccountTypeForm, NewUserForm, ConfirmForm)
+from app.admin.forms import (NewUserForm, ConfirmForm, FileUpload)
 from app.decorators import admin_required
-from app.models import EditableHTML, Role, User, User_schedule
+from app.models import (EditableHTML, Role, User, User_schedule, Shift,
+                        Schedule_year, Timeoff, Team, Timeoff_Type)
+from app.admin.utils.staffhub_import import Shifts_Import, TimeOff_Import
+
+from sqlalchemy import text
 
 admin = Blueprint('admin', __name__)
+
+
+def import_schedule_data(file, year):
+    shift_imp = Shifts_Import(file, year)
+    rec_range = [
+        shift_imp.valid_data[0]['shiftstart'],
+        shift_imp.valid_data[len(shift_imp.valid_data) - 1]['shiftend']
+    ]
+    db.session.query(Shift).filter(Shift.start >= rec_range[0]).filter(
+        Shift.end <= rec_range[1]).filter(Shift.manual_edit == False).delete()
+    db.session.commit()
+
+    counter = 0
+
+    for d in shift_imp.valid_data:
+        user = User.query.filter_by(first_name=d['first_name']).filter_by(
+            last_name=d['last_name']).first()
+        if user:
+            schedule_year = Schedule_year.query.filter_by(year=year).first()
+            user_schedule = User_schedule.query.filter_by(
+                user=user, year=schedule_year).first()
+            if user_schedule:
+                shift = Shift(
+                    schedule=user_schedule,
+                    start=d['shiftstart'],
+                    end=d['shiftend'],
+                    isic=d['isic'],
+                    training=d['training'],
+                    otbanked=d['otbanked'],
+                    otpaid=d['otpaidout'],
+                    comment=d['comment'])
+                db.session.add(shift)
+                counter = counter + 1
+                print('added shift' + str(counter))
+
+    counter = 0
+
+    timeoff_imp = TimeOff_Import(file, year)
+    for d in timeoff_imp.valid_data:
+        user = User.query.filter_by(first_name=d['first_name']).filter_by(
+            last_name=d['last_name']).first()
+        if user:
+            schedule_year = Schedule_year.query.filter_by(year=year).first()
+            user_schedule = User_schedule.query.filter_by(
+                user=user, year=schedule_year).first()
+            if user_schedule:
+                timeoff = Timeoff(
+                    schedule=user_schedule,
+                    dayof=d['dayof'],
+                    partialtime=d['partialtime'],
+                    type=Timeoff_Type.query.filter_by(name=d['type']).first())
+                db.session.add(timeoff)
+                counter = counter + 1
+                print('added timeoff' + str(counter))
+    print('commiting records')
+    db.session.commit()
+    print('All done' + str(shift_imp.log))
 
 
 @admin.route('/')
@@ -32,7 +86,7 @@ def index():
 @admin_required
 def new_user():
     """Create a new user."""
-    form = NewUserForm()
+    form = NewUserForm(team=Team.query.filter_by(name='SC').first())
     if form.validate_on_submit():
         user = User(
             role=form.role.data,
@@ -47,7 +101,7 @@ def new_user():
             change_pw=True)
         user_schedule = User_schedule(
             user=user,
-            year=form.year.data,
+            year=Schedule_year.query.filter_by(iscurrent=True).first(),
             active=True,
             carriedvacation=form.carriedvacation.data,
             entitledvacation=form.entitledvacation.data,
@@ -70,10 +124,23 @@ def new_user():
 @admin_required
 def registered_users():
     """View all registered users."""
-    users = User.query.all()
+    users = User.query.filter_by(confirmed=True).all()
     roles = Role.query.all()
+    teams = Team.query.all()
     return render_template(
-        'admin/registered_users.html', users=users, roles=roles)
+        'admin/registered_users.html', users=users, roles=roles, teams=teams)
+
+
+@admin.route('/shift_info')
+@login_required
+@admin_required
+def shift_info():
+    shifts = db.session.query(Shift).join(User_schedule).join(
+        Schedule_year).filter(Schedule_year.iscurrent == True).all()
+    roles = Role.query.all()
+    teams = Team.query.all()
+    return render_template(
+        'admin/shift_info.html', shifts=shifts, roles=roles, teams=teams)
 
 
 @admin.route('/unconfirmed_users')
@@ -88,33 +155,19 @@ def unconfirmed_users():
     return render_template('admin/unconfirmed_users.html', users=users)
 
 
-@admin.route('/user/<int:user_id>')
-@admin.route('/user/<int:user_id>/info')
-@login_required
-@admin_required
-def user_info(user_id):
-    """View a user's profile."""
-    user = User.query.filter_by(id=user_id).first()
-    if user is None:
-        abort(404)
-    if user.confirmed is False:
-        return redirect(url_for('admin.confirm_user', user_id=user_id))
-    return render_template('admin/manage_user.html', user=user)
-
-
 @admin.route('/user/<int:user_id>/confirm', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def confirm_user(user_id):
     form = ConfirmForm()
     user = User.query.filter_by(id=user_id).first()
+    year = Schedule_year.query.filter_by(iscurrent=True).first()
     if user is None:
         abort(404)
     if form.validate_on_submit():
         user_schedule = User_schedule(
             user=user,
-            year=form.year.data,
-            active=True,
+            year=year,
             carriedvacation=form.carriedvacation.data,
             entitledvacation=form.entitledvacation.data,
             entitledpersonal=form.entitledpersonal.data,
@@ -127,37 +180,11 @@ def confirm_user(user_id):
         user.start_date = form.startdate.data
         db.session.add(user_schedule)
         db.session.commit()
-        return redirect(url_for('admin.user_info', user_id=user_id))
+        return redirect(url_for('manage_user.user_info', user_id=user_id))
     if user.confirmed is True:
-        return redirect(url_for('admin.user_info', user_id=user_id))
+        return redirect(url_for('manage_user.user_info', user_id=user_id))
     return render_template(
         'admin/confirm_user.html', form=form, user_id=user_id)
-
-
-@admin.route(
-    '/user/<int:user_id>/change-account-type', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def change_account_type(user_id):
-    """Change a user's account type."""
-    if current_user.id == user_id:
-        flash(
-            'You cannot change the type of your own account. Please ask '
-            'another administrator to do this.', 'error')
-        return redirect(url_for('admin.user_info', user_id=user_id))
-
-    user = User.query.get(user_id)
-    if user is None:
-        abort(404)
-    form = ChangeAccountTypeForm()
-    if form.validate_on_submit():
-        user.role = form.role.data
-        db.session.add(user)
-        db.session.commit()
-        flash(
-            'Role for user {} successfully changed to {}.'.format(
-                user.full_name(), user.role.name), 'form-success')
-    return render_template('admin/manage_user.html', user=user, form=form)
 
 
 @admin.route('/user/<int:user_id>/_delete/<string:return_direction>')
@@ -175,42 +202,6 @@ def delete_user(user_id, return_direction):
         db.session.commit()
         flash('Successfully deleted user %s.' % user.full_name(), 'success')
     return redirect(url_for(return_direction))
-
-
-@admin.route('/user/<int:user_id>/deactivate')
-@login_required
-@admin_required
-def deactivate_user(user_id):
-    if current_user.id == user_id:
-        flash(
-            'You cannot dactivate yourself dumbass. Please ask another '
-            'administrator to do this.', 'error')
-    else:
-        user = User.query.filter_by(id=user_id).first()
-        if user is None:
-            abort(404)
-        user.active = False
-        db.session.commit()
-        flash('Deactivate user %s.' % user.full_name(), 'success')
-    return redirect(url_for('admin.registered_users'))
-
-
-@admin.route('/user/<int:user_id>/reactivate')
-@login_required
-@admin_required
-def reactivate_user(user_id):
-    if current_user.id == user_id:
-        flash(
-            'You cannot reactivate yourself dumbass. Please ask another '
-            'administrator to do this.', 'error')
-    else:
-        user = User.query.filter_by(id=user_id).first()
-        if user is None:
-            abort(404)
-        user.active = True
-        db.session.commit()
-        flash('reactivated user %s.' % user.full_name(), 'success')
-    return redirect(url_for('admin.user_info', user_id=user.id))
 
 
 @admin.route('/_update_editor_contents', methods=['POST'])
@@ -232,3 +223,55 @@ def update_editor_contents():
     db.session.commit()
 
     return 'OK', 200
+
+
+@admin.route('/data_import')
+@login_required
+@admin_required
+def data_import():
+    return render_template('admin/data_imports.html')
+
+
+@admin.route('/data_import/staffhub_import', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def staffhub_import():
+    form = FileUpload()
+    year = Schedule_year.query.filter_by(iscurrent=True).first()
+    last_shift = Shift.query.order_by(Shift.end.desc()).first()
+    if year:
+        if form.validate_on_submit():
+            import_schedule_data(form.upload.data, year.year)
+    return render_template(
+        'admin/data_imports.html', form=form, year=year, last_shift=last_shift)
+
+
+@admin.route('/schedule_maintenance')
+@admin.route('/schedule_maintenance/<int:year_id>')
+@admin.route('/schedule_maintenance/<int:year_id>/<int:iscurrent>')
+@login_required
+@admin_required
+def schedule_maintenance(year_id=None, iscurrent=0):
+    years = Schedule_year.query.order_by(Schedule_year.year.desc()).all()
+
+    if iscurrent == 1:
+        Schedule_year.query.filter_by(iscurrent=True).first().iscurrent = False
+        active_year = Schedule_year.query.filter_by(id=year_id).first()
+        active_year.iscurrent = True
+    elif year_id:
+        active_year = Schedule_year.query.filter_by(id=year_id).first()
+    else:
+        active_year = Schedule_year.query.filter_by(iscurrent=True).first()
+
+    # if active_year:
+    #     sql = text('''  SELECT u.id, u.first_name, u.last_name, t.name FROM user_schedules us
+    #                     INNER JOIN schedule_years sy ON sy.id = year_id
+    #                     FULL JOIN users u ON u.id = us.user_id
+    #                     INNER JOIN teams t ON u.team_id = t.id
+    #                     WHERE us.id IS NULL
+    #                     OR us.year_id <> {}
+    #                     AND (SELECT id FROM user_schedules WHERE id = {}) is null'''.format(int(active_year.id), int(active_year.id)))
+    #     schedules = db.engine.execute(sql)
+
+    return render_template(
+        'admin/schedule_maintenance.html', year=active_year, years=years)

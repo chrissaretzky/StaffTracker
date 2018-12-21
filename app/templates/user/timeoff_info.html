@@ -1,0 +1,23 @@
+{% extends 'layouts/user.html' %}
+
+{% block user %}
+    <div class="row">
+
+    </div>
+    <table class="ui celled sortable selectable table user_records_table">
+        <thead>
+            <tr>
+                <th>Day</th>
+                <th>Type</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for t in timeoff %}
+            <tr>
+                <td>{{ t.day }}</td>
+                <td>{{ t.type.name }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

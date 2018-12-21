@@ -1,0 +1,51 @@
+{% extends 'layouts/manage_user.html' %}
+
+{% macro user_info(user, schedules) %}
+    <div class="row">
+        <button onclick="window.location.href = '{{ url_for('manage_user.edit_user', user_id=user.id) }}';" class="ui button basic">Edit User</button>
+    </div>
+    <table class="ui compact definition table">
+        <tr><td>Start Date</td><td>{{ user.start_date }}</td></tr>
+        <tr><td>Team</td><td>{{ user.team.name }}</td></tr>
+        <tr><td>Full name</td><td>{{ '%s %s' % (user.first_name, user.last_name) }}</td></tr>
+        <tr><td>Email address</td><td>{{ user.email }}</td></tr>
+        <tr><td>Phone</td><td>{{ user.phone }}</td></tr>
+    </table>
+    <table class="ui compact definition selectable table">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Available Vacation</th>
+                <th>Personal Days Used</th>
+                <th>Parttime</th>
+                <th>Averaging</th>
+                <th>Shift Length</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in schedules %}
+                {% if s.year.iscurrent %}
+                    <tr onclick="window.location.href = '{{ url_for('manage_user.edit_schedule', user_id=user.id, sched_id=s.id) }}';">
+                {% else %}
+                    <tr class="inactive" onclick="window.location.href = '{{ url_for('manage_user.edit_schedule', user_id=user.id, sched_id=s.id) }}';">
+                {% endif %}
+                <td>{{s.year.year}}</td>
+                <td>{{s.available_vacation}}</td>
+                <td>{{s.used_personal}}</td>
+                <td>{{s.isparttime}}</td>
+                <td>{{s.isaveraging}}</td>
+                <td>{{s.shiftlength}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <button onclick="window.location.href = '{{ url_for('manage_user.add_schedule', user_id=user.id) }}';" class="ui button basic">Add Schedule</button>
+    </table>
+{% endmacro %}
+
+{% block manage_user %}
+    {% if form %}
+        {{ f.render_form(form) }}
+    {% else %}
+        {{ user_info(user, schedules) }}
+    {% endif %}
+{% endblock %}

@@ -22,3 +22,4 @@ circle.yml
 data-dev.sqlite
 LICENSE.md
 README.md
+migrations

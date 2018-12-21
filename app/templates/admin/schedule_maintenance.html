@@ -1,0 +1,84 @@
+{% extends 'layouts/base.html' %}
+{% import 'macros/form_macros.html' as f %}
+
+
+{% macro year_menu(years) %}
+    <div class="ui vertical fluid secondary menu">
+        {% for year in years %}
+            {% set href = url_for("admin.schedule_maintenance", year_id=year.id) %}
+            <a class="item" href="{{ href }}">
+                {% if year.iscurrent %}
+                    *
+                {% endif %}
+                {{ year.year }}
+            </a>
+        {% endfor %}
+    </div>
+{% endmacro %}
+
+{% block content %}
+    <div class="ui stackable centered grid container">
+        <div class="twelve wide column">
+            <a class="ui basic compact button" href="{{ url_for('admin.index') }}">
+                <i class="caret left icon"></i>
+                Back to dashboard
+            </a>
+            <h2 class="ui header">
+                Schedule Maintenance
+            </h2>
+        </div>
+        <div class="stretched divided very relaxed row">
+            <div class="four wide column">
+                {{ year_menu(years) }}
+            </div>
+            <div class="eight wide column">
+                {% if year %}
+                    <div class='two field'>
+                        <span style='font-weight: bold;font-size: 20;margin-right: 10px'>{{year.year}}</span>
+                        {% if not year.iscurrent %}
+                            <a class="ui basic button" href="{{ url_for('admin.schedule_maintenance', year_id=year.id, iscurrent=1) }}">
+                                Set To Current Year
+                            </a>
+                        {% else %}
+                            <a class="ui basic button disabled" href="{{ url_for('admin.schedule_maintenance', year_id=year.id, iscurrent=1) }}">
+                                Set To Current Year
+                            </a>
+                        {% endif %}
+                    </div>
+                    <!-- <div>
+                        <h4>Employees Missing Schedules for this Year</h4>
+                        <table id="schedule_table" class="ui celled sortable selectable table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for s in schedules %}
+                                <tr onclick="window.location.href = '{{ url_for('manage_user.user_info', user_id=s[0]) }}';">
+                                    <td>{{ s[1] }} {{ s[2] }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div> -->
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        $(document).ready( function () {
+            $('#schedule_table').DataTable({
+                "dom": "<'ui stackable grid'"+
+                            "<'row dt-table'"+
+                                "<'sixteen wide column'tr>"+
+                            ">"+
+                        ">",
+                initComplete: function () {
+                    this.api().column(5).search('True').draw()
+                }
+            });
+        } );
+
+    </script>
+{% endblock %}

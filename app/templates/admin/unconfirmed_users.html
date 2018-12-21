@@ -27,7 +27,7 @@
                     </thead>
                     <tbody>
                     {% for u in users | sort(attribute='last_name') %}
-                        <tr onclick="window.location.href = '{{ url_for('admin.user_info', user_id=u.id) }}';">
+                        <tr onclick="window.location.href = '{{ url_for('manage_user.user_info', user_id=u.id) }}';">
 
                             <td>{{ u.first_name }}</td>
                             <td>{{ u.last_name }}</td>

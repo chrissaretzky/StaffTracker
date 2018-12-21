@@ -5,7 +5,7 @@
     {% if active %}
         <div class="ui padded segment">
     {% else %}
-        <div class="ui padded segment" style="opacity:0.5">
+        <div class="ui padded segment inactive">
     {% endif %}
             <h3 class="ui header">
                 {% if icon is not none %}
@@ -38,10 +38,16 @@
             <div class="ui one column stackable grid">
                 {{ dashboard_option('User Information', 'admin.registered_users',
                                     description='View and manage user accounts', icon='users icon') }}
+                {{ dashboard_option('Shift Information', 'admin.shift_info',
+                                    description='View and Filter Recorded Shifts', icon='address book icon') }}
                 {{ dashboard_option('Add New User', 'admin.new_user',
                                     description='Create a new user account', icon='add user icon') }}
                 {{ dashboard_option('Unconfirmed Users', 'admin.unconfirmed_users',
-                                    description='Finish setting up new users', icon='users icon', value=cnt_unconf_users, active=(True if cnt_unconf_users > 0 else False)) }}
+                                    description='Finish setting up new users', icon='check icon', value=cnt_unconf_users, active=(True if cnt_unconf_users > 0 else False)) }}
+                {{ dashboard_option('Import Data', 'admin.staffhub_import',
+                                    description=None, icon='upload icon') }}
+                {{ dashboard_option('Schedule Maintenance', 'admin.schedule_maintenance',
+                                    description=None, icon='wrench icon') }}
             </div>
         </div>
     </div>

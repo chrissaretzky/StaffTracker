@@ -1,0 +1,52 @@
+{% extends 'layouts/base.html' %}
+{% import 'macros/form_macros.html' as f %}
+{% if user.active %}
+    {% set endpoints = [
+        ('manage_user.user_info', 'User information'),
+        ('manage_user.shift_info', 'Shift Information'),
+        ('manage_user.timeoff_info', 'Time Off Information'),
+        ('manage_user.change_team', 'Change Team'),
+        ('manage_user.change_account_type', 'Change Account Type'),
+        ('manage_user.deactivate_user', 'Deactivate User')
+    ] %}
+{% else %}
+    {% set endpoints = [
+        ('manage_user.reactivate_user', 'Reactivate User')
+    ] %}
+{% endif %}
+
+
+{% macro navigation(items) %}
+    <div class="ui vertical fluid secondary menu">
+        {% for route, name in items %}
+            {% set href = url_for(route, user_id=user.id) %}
+            <a class="item {% if request.endpoint == route %}active{% endif %}" href="{{ href }}">
+                {{ name }}
+            </a>
+        {% endfor %}
+    </div>
+{% endmacro %}
+
+{% block content %}
+    <div class="ui stackable centered grid container">
+        <div class="twelve wide column">
+            <a class="ui basic compact button" href="{{ url_for('admin.registered_users') }}">
+                <i class="caret left icon"></i>
+                Back to all users
+            </a>
+            <h2 class="ui header">
+                {{ user.full_name() }}
+                <div class="sub header">View and manage {{ user.first_name }}’s account.</div>
+            </h2>
+        </div>
+        <div class="stretched divided very relaxed row">
+            <div class="four wide column">
+                {{ navigation(endpoints) }}
+            </div>
+            <div class="eight wide column">
+                {% block manage_user %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

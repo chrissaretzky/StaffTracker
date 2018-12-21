@@ -6,8 +6,9 @@ from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager, Shell
 
 from app import create_app, db
-from app.models import Role, User, Team, Schedule_year
+from app.models import Role, User, Team, Timeoff_Type
 from config import Config
+from tests.setup import create_demo_data
 
 app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 manager = Manager(app)
@@ -60,6 +61,7 @@ def add_fake_data(number_users):
 def setup_dev():
     """Runs the set-up needed for local development."""
     setup_general()
+    create_demo_data()
 
 
 @manager.command
@@ -73,7 +75,7 @@ def setup_general():
        Also sets up first admin user."""
     Role.insert_roles()
     Team.insert_teams()
-    Schedule_year.create_first_year()
+    Timeoff_Type.insert_types()
     admin_query = Role.query.filter_by(name='Administrator')
     if admin_query.first() is not None:
         if User.query.filter_by(email=Config.ADMIN_EMAIL).first() is None:

@@ -1,8 +1,6 @@
 import os
 import sys
 
-from raygun4py.middleware import flask as flask_raygun
-
 PYTHON_VERSION = sys.version_info[0]
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -25,28 +23,10 @@ class Config:
         print('SECRET KEY ENV VAR NOT SET! SHOULD NOT SEE IN PRODUCTION')
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
 
-    # Email
-    MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.sendgrid.net'
-    MAIL_PORT = os.environ.get('MAIL_PORT') or 587
-    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS') or True
-    MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL') or False
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
-
-    # Analytics
-    GOOGLE_ANALYTICS_ID = os.environ.get('GOOGLE_ANALYTICS_ID') or ''
-    SEGMENT_API_KEY = os.environ.get('SEGMENT_API_KEY') or ''
-
     # Admin account
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD') or 'password'
     ADMIN_EMAIL = os.environ.get(
-        'ADMIN_EMAIL') or 'flask-base-admin@example.com'
-    EMAIL_SUBJECT_PREFIX = '[{}]'.format(APP_NAME)
-    EMAIL_SENDER = '{app_name} Admin <{email}>'.format(
-        app_name=APP_NAME, email=MAIL_USERNAME)
-
-    RAYGUN_APIKEY = os.environ.get('RAYGUN_APIKEY')
+        'ADMIN_EMAIL') or 'csaretzky@squirrelsystems.com'
 
     @staticmethod
     def init_app(app):
@@ -87,37 +67,10 @@ class ProductionConfig(Config):
         Config.init_app(app)
         assert os.environ.get('SECRET_KEY'), 'SECRET_KEY IS NOT SET!'
 
-        flask_raygun.Provider(app, app.config['RAYGUN_APIKEY']).attach()
-
-
-class HerokuConfig(ProductionConfig):
-    @classmethod
-    def init_app(cls, app):
-        ProductionConfig.init_app(app)
-
-        # Handle proxy server headers
-        from werkzeug.contrib.fixers import ProxyFix
-        app.wsgi_app = ProxyFix(app.wsgi_app)
-
-
-class UnixConfig(ProductionConfig):
-    @classmethod
-    def init_app(cls, app):
-        ProductionConfig.init_app(app)
-
-        # Log to syslog
-        import logging
-        from logging.handlers import SysLogHandler
-        syslog_handler = SysLogHandler()
-        syslog_handler.setLevel(logging.WARNING)
-        app.logger.addHandler(syslog_handler)
-
 
 config = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,
     'production': ProductionConfig,
-    'default': DevelopmentConfig,
-    'heroku': HerokuConfig,
-    'unix': UnixConfig
+    'default': DevelopmentConfig
 }

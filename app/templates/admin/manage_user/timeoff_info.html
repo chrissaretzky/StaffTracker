@@ -1,0 +1,31 @@
+{% extends 'layouts/manage_user.html' %}
+
+{% macro timeoff_info(timeooff) %}
+    <div class="row">
+        <button onclick="window.location.href = '{{ url_for('manage_user.new_timeoff', user_id=user.id) }}';" class="ui button basic">Add Timeoff</button>
+    </div>
+    <table class="ui celled sortable selectable table user_records_table">
+        <thead>
+            <tr>
+                <th>Day</th>
+                <th>Type</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for t in timeoff %}
+            <tr onclick="window.location.href = '{{ url_for('manage_user.edit_timeoff', user_id=user.id, timeoff_id=t.id) }}';">
+                <td>{{ t.day }}</td>
+                <td>{{ t.type.name }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endmacro %}
+
+{% block manage_user %}
+    {% if form %}
+        {{ f.render_form(form) }}
+    {% else %}
+        {{ timeoff_info(shifts) }}
+    {% endif %}
+{% endblock %}

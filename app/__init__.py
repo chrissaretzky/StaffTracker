@@ -5,7 +5,6 @@ from flask_assets import Environment
 from flask_compress import Compress
 from flask_login import LoginManager
 from flask_mail import Mail
-from flask_rq import RQ
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CsrfProtect
 
@@ -34,12 +33,10 @@ def create_app(config_name):
     config[config_name].init_app(app)
 
     # Set up extensions
-    mail.init_app(app)
     db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
     compress.init_app(app)
-    RQ(app)
 
     # Register Jinja template functions
     from .utils import register_template_utils
@@ -69,7 +66,13 @@ def create_app(config_name):
     from .account import account as account_blueprint
     app.register_blueprint(account_blueprint, url_prefix='/account')
 
+    from .user import user as user_blueprint
+    app.register_blueprint(user_blueprint, url_prefix='/user')
+
     from .admin import admin as admin_blueprint
     app.register_blueprint(admin_blueprint, url_prefix='/admin')
+
+    from .admin.manage_user import manage_user as manage_user_blueprint
+    app.register_blueprint(manage_user_blueprint, url_prefix='/admin/user')
 
     return app

@@ -1,0 +1,39 @@
+{% extends 'layouts/user.html' %}
+
+{% block user %}
+    <table class="ui compact definition table">
+        <tr><td>Start Date</td><td>{{ user.start_date }}</td></tr>
+        <tr><td>Team</td><td>{{ user.team.name }}</td></tr>
+        <tr><td>Full name</td><td>{{ '%s %s' % (user.first_name, user.last_name) }}</td></tr>
+        <tr><td>Email address</td><td>{{ user.email }}</td></tr>
+        <tr><td>Phone</td><td>{{ user.phone }}</td></tr>
+    </table>
+    <table class="ui compact definition selectable table">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Available Vacation</th>
+                <th>Personal Days Used</th>
+                <th>Parttime</th>
+                <th>Averaging</th>
+                <th>Shift Length</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in schedules %}
+                {% if s.year.iscurrent %}
+                    <tr>
+                {% else %}
+                    <tr class="inactive">
+                {% endif %}
+                <td>{{s.year.year}}</td>
+                <td>{{s.available_vacation}}</td>
+                <td>{{s.used_personal}}</td>
+                <td>{{s.isparttime}}</td>
+                <td>{{s.isaveraging}}</td>
+                <td>{{s.shiftlength}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

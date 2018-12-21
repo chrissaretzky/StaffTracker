@@ -30,3 +30,39 @@ nav .mobile.only.row {
 table.selectable tr:hover {
     cursor: pointer !important;
 }
+
+.inactive {
+    opacity:0.5;
+}
+
+.tableselect {
+    margin-right: 10px;
+}
+
+.tablecheck {
+    margin-left: 10px;
+}
+
+.date_picker {
+    margin-right: 10px;
+}
+
+.ic {
+    color: #2087cd;
+    font-weight: bold;
+}
+
+.banked {
+    color: #fbbc31;
+    font-weight: bold;
+}
+
+.paid {
+    color: #f27126;
+    font-weight: bold;
+}
+
+.training {
+    color: #a43bc3;
+    font-weight: bold;
+}

@@ -36,10 +36,12 @@ def login():
                         flash('Please change your password', 'warning')
                         return redirect(url_for('account.change_password'))
                     else:
-                        flash('You are now logged in. Welcome back!',
-                              'success')
-                        return redirect(
-                            request.args.get('next') or url_for('main.index'))
+                        if user.role.name == 'Administrator':
+                            return redirect(url_for('admin.index'))
+                        elif user.role.name == 'User':
+                            return redirect(url_for('user.index'))
+                        else:
+                            abort(404)
                 else:
                     flash('Your account is not active', 'error')
             else:
