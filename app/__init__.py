@@ -4,7 +4,6 @@ from flask import Flask
 from flask_assets import Environment
 from flask_compress import Compress
 from flask_login import LoginManager
-from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CsrfProtect
 
@@ -13,7 +12,6 @@ from config import config
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-mail = Mail()
 db = SQLAlchemy()
 csrf = CsrfProtect()
 compress = Compress()

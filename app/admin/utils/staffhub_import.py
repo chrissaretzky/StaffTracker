@@ -1,5 +1,4 @@
 from openpyxl import load_workbook
-from openpyxl import worksheet
 import re
 import calendar
 from app.admin.utils.data_import import Excel_Import
@@ -50,11 +49,6 @@ class Staffhub_Import(Excel_Import):
         self.yearof = yearof
         self.sh = load_workbook(excel_file).active
         self.isValidated = self.run_validation()
-        if not self.isValidated:
-            print(self.log)
-            raise ValidationError(
-                'Sheet is not is not in the correct format please see log file'
-            )
 
     def generate_employees_dict(self, sh):
         emps = {}
@@ -109,7 +103,6 @@ class Staffhub_Import(Excel_Import):
                 cell = self.sh.cell(ii, i)
                 color = cell.fill.start_color.rgb
                 if color not in self.valid_colors.values():
-                    print(color)
                     problem_cells.append(cell.coordinate)
         if len(problem_cells) > 0:
             self.log['invalid_colors'] = problem_cells
@@ -202,11 +195,14 @@ class Shifts_Import(Staffhub_Import):
 
     def __init__(self, excel_file, yearof):
         super().__init__(excel_file, yearof)
-        self.data = self.generate_shifts()
-        self.valid_data = self.validate_import(self.data, self.shifts_schema)
+        if self.isValidated:
+            self.data = self.generate_shifts()
+            self.valid_data = self.validate_import(self.data,
+                                                   self.shifts_schema)
+        else:
+            self.valid_data = None
 
     def generate_shifts(self):
-
         shifts = []
         self.log['records'] = 0
 
@@ -221,9 +217,7 @@ class Shifts_Import(Staffhub_Import):
                 if shift:
                     shifts.append(shift)
                     self.log['records'] = 1 + self.log['records']
-                    print('added shift: ' + str(self.log['records']))
         self.log['type'] = 'shifts'
-        print('shifts generated: ' + str(self.log))
         return shifts
 
     def create_shift_data(self, cell, dates, emps):
@@ -361,8 +355,12 @@ class TimeOff_Import(Staffhub_Import):
 
     def __init__(self, excel_file, yearof):
         super().__init__(excel_file, yearof)
-        self.data = self.generate_timeoff()
-        self.valid_data = self.validate_import(self.data, self.timeoff_schema)
+        if self.isValidated:
+            self.data = self.generate_timeoff()
+            self.valid_data = self.validate_import(self.data,
+                                                   self.timeoff_schema)
+        else:
+            self.valid_data = None
 
     def generate_timeoff(self):
         time_offs = []
@@ -379,9 +377,7 @@ class TimeOff_Import(Staffhub_Import):
                 if time_off:
                     time_offs.append(time_off)
                     self.log['records'] = self.log['records'] + 1
-                    print('added timeoff: ' + str(self.log['records']))
         self.log['type'] = 'time off'
-        print('timeoffs generated: ' + str(self.log))
         return time_offs
 
     def create_time_off_data(self, cell, dates, emps):

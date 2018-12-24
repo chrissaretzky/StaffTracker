@@ -13,3 +13,4 @@ from .stat_day import *  # noqa
 from .timeoff import *  # noqa
 from .user_payroll import *  # noqa
 from .user_schedule import *  # noqa
+from .import_log import *  # noqa
