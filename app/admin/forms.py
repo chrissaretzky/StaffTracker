@@ -46,5 +46,5 @@ class NewUserForm(NewUserScheduleForm):
 
 
 class FileUpload(Form):
-    upload = FileField('Staffhub Sheet', validators=[FileRequired()], description='This form will not report any errors with the transfer, for the mean time I would reccomend only using this function as directed by webadmin')
+    upload = FileField('Staffhub Sheet', validators=[FileRequired()])
     submit = SubmitField('Upload')

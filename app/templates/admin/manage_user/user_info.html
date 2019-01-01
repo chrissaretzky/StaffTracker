@@ -2,15 +2,21 @@
 
 {% macro user_info(user, schedules) %}
     <div class="row">
+        {% if user.active %}
         <button onclick="window.location.href = '{{ url_for('manage_user.edit_user', user_id=user.id) }}';" class="ui button basic">Edit User</button>
+        {% endif %}
     </div>
     <table class="ui compact definition table">
         <tr><td>Start Date</td><td>{{ user.start_date }}</td></tr>
+        {% if not user.active %}
+            <tr><td>Term Date</td><td>{{ user.term_date }}</td></tr>
+        {% endif %}
         <tr><td>Team</td><td>{{ user.team.name }}</td></tr>
         <tr><td>Full name</td><td>{{ '%s %s' % (user.first_name, user.last_name) }}</td></tr>
         <tr><td>Email address</td><td>{{ user.email }}</td></tr>
         <tr><td>Phone</td><td>{{ user.phone }}</td></tr>
     </table>
+    {% if user.active %}
     <table class="ui compact definition selectable table">
         <thead>
             <tr>
@@ -40,6 +46,7 @@
         </tbody>
         <button onclick="window.location.href = '{{ url_for('manage_user.add_schedule', user_id=user.id) }}';" class="ui button basic">Add Schedule</button>
     </table>
+    {% endif %}
 {% endmacro %}
 
 {% block manage_user %}

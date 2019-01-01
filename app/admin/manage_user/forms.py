@@ -170,3 +170,9 @@ class EditTimeoffForm(Form):
         query_factory=lambda: db.session.query(Timeoff_Type).order_by('name'))
     submit = SubmitField('Submit')
     delete = SubmitField('Delete')
+
+
+class DeactivateUser(Form):
+    term_date = DateField(
+        'Termination Date', validators=[InputRequired()], format='%m-%d-%Y')
+    submit = SubmitField('Deactivate')

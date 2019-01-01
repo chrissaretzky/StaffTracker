@@ -1,74 +1,91 @@
 from flask import (Blueprint, abort, flash, redirect, render_template, request,
-                   url_for)
+                   url_for, jsonify)
 from flask_login import current_user, login_required
 
 from app import db
 from app.admin.forms import (NewUserForm, ConfirmForm, FileUpload)
 from app.decorators import admin_required
 from app.models import (EditableHTML, Role, User, User_schedule, Shift,
-                        Schedule_year, Timeoff, Team, Timeoff_Type)
+                        Schedule_year, Timeoff, Team, Timeoff_Type, Import_log)
 from app.admin.utils.staffhub_import import Shifts_Import, TimeOff_Import
 
-from sqlalchemy import text
+import subprocess
 
 admin = Blueprint('admin', __name__)
 
 
+def backup_db():
+    subprocess.call(
+        'C:\\Users\\Chris\\OneDrive - Squirrel Systems\\Projects\\Staff_Tracker\\backup\\backup.bat'
+    )
+
+
 def import_schedule_data(file, year):
     shift_imp = Shifts_Import(file, year)
-    rec_range = [
-        shift_imp.valid_data[0]['shiftstart'],
-        shift_imp.valid_data[len(shift_imp.valid_data) - 1]['shiftend']
-    ]
-    db.session.query(Shift).filter(Shift.start >= rec_range[0]).filter(
-        Shift.end <= rec_range[1]).filter(Shift.manual_edit == False).delete()
-    db.session.commit()
+    if not shift_imp.isValidated:
+        return shift_imp.log
+    else:
+        backup_db()
+        rec_range = [
+            shift_imp.valid_data[0]['shiftstart'],
+            shift_imp.valid_data[len(shift_imp.valid_data) - 1]['shiftend']
+        ]
+        db.session.query(Shift).filter(Shift.start >= rec_range[0]).filter(
+            Shift.end <= rec_range[1]).filter(
+                Shift.manual_edit == False).delete()
+        db.session.commit()
 
-    counter = 0
+        for d in shift_imp.valid_data:
+            user = User.query.filter_by(first_name=d['first_name']).filter_by(
+                last_name=d['last_name']).first()
+            if user:
+                schedule_year = Schedule_year.query.filter_by(
+                    year=year).first()
+                user_schedule = User_schedule.query.filter_by(
+                    user=user, year=schedule_year).first()
+                if user_schedule:
+                    shift = Shift(
+                        schedule=user_schedule,
+                        start=d['shiftstart'],
+                        end=d['shiftend'],
+                        isic=d['isic'],
+                        training=d['training'],
+                        otbanked=d['otbanked'],
+                        otpaid=d['otpaidout'],
+                        comment=d['comment'])
+                    db.session.add(shift)
 
-    for d in shift_imp.valid_data:
-        user = User.query.filter_by(first_name=d['first_name']).filter_by(
-            last_name=d['last_name']).first()
-        if user:
-            schedule_year = Schedule_year.query.filter_by(year=year).first()
-            user_schedule = User_schedule.query.filter_by(
-                user=user, year=schedule_year).first()
-            if user_schedule:
-                shift = Shift(
-                    schedule=user_schedule,
-                    start=d['shiftstart'],
-                    end=d['shiftend'],
-                    isic=d['isic'],
-                    training=d['training'],
-                    otbanked=d['otbanked'],
-                    otpaid=d['otpaidout'],
-                    comment=d['comment'])
-                db.session.add(shift)
-                counter = counter + 1
-                print('added shift' + str(counter))
-
-    counter = 0
-
-    timeoff_imp = TimeOff_Import(file, year)
-    for d in timeoff_imp.valid_data:
-        user = User.query.filter_by(first_name=d['first_name']).filter_by(
-            last_name=d['last_name']).first()
-        if user:
-            schedule_year = Schedule_year.query.filter_by(year=year).first()
-            user_schedule = User_schedule.query.filter_by(
-                user=user, year=schedule_year).first()
-            if user_schedule:
-                timeoff = Timeoff(
-                    schedule=user_schedule,
-                    dayof=d['dayof'],
-                    partialtime=d['partialtime'],
-                    type=Timeoff_Type.query.filter_by(name=d['type']).first())
-                db.session.add(timeoff)
-                counter = counter + 1
-                print('added timeoff' + str(counter))
-    print('commiting records')
-    db.session.commit()
-    print('All done' + str(shift_imp.log))
+        timeoff_imp = TimeOff_Import(file, year)
+        for d in timeoff_imp.valid_data:
+            user = User.query.filter_by(first_name=d['first_name']).filter_by(
+                last_name=d['last_name']).first()
+            if user:
+                schedule_year = Schedule_year.query.filter_by(
+                    year=year).first()
+                user_schedule = User_schedule.query.filter_by(
+                    user=user, year=schedule_year).first()
+                if user_schedule:
+                    timeoff = Timeoff(
+                        schedule=user_schedule,
+                        dayof=d['dayof'],
+                        partialtime=d['partialtime'],
+                        type=Timeoff_Type.query.filter_by(
+                            name=d['type']).first())
+                    db.session.add(timeoff)
+        log = Import_log(
+            start=rec_range[0],
+            end=rec_range[1],
+            schema_errors=shift_imp.log['schema_errors'],
+            invalid_colors=shift_imp.log['invalid_colors'],
+            invalid_times=shift_imp.log['invalid_times'],
+            invalid_header=shift_imp.log['invalid_header'],
+            records=shift_imp.log['records'],
+            dates=shift_imp.log['dates'],
+            employees=shift_imp.log['employees'],
+            _type=shift_imp.log['type'])
+        db.session.add(log)
+        db.session.commit()
+        return None
 
 
 @admin.route('/')
@@ -141,6 +158,15 @@ def shift_info():
     teams = Team.query.all()
     return render_template(
         'admin/shift_info.html', shifts=shifts, roles=roles, teams=teams)
+
+
+@admin.route('/timeoff_info')
+@login_required
+@admin_required
+def timeoff_info():
+    timeoff = db.session.query(Timeoff).join(User_schedule).join(
+        Schedule_year).filter(Schedule_year.iscurrent == True).all()
+    return render_template('admin/timeoff_info.html', timeoff=timeoff)
 
 
 @admin.route('/unconfirmed_users')
@@ -236,14 +262,23 @@ def data_import():
 @login_required
 @admin_required
 def staffhub_import():
-    form = FileUpload()
+    error = None
     year = Schedule_year.query.filter_by(iscurrent=True).first()
     last_shift = Shift.query.order_by(Shift.end.desc()).first()
-    if year:
-        if form.validate_on_submit():
-            import_schedule_data(form.upload.data, year.year)
+    form = FileUpload()
+    if form.validate_on_submit():
+        if year:
+            error = import_schedule_data(form.upload.data, year.year)
+            if error:
+                error = error
+    logs = Import_log.query.order_by(Import_log.run_date.desc()).all()
     return render_template(
-        'admin/data_imports.html', form=form, year=year, last_shift=last_shift)
+        'admin/data_imports.html',
+        form=form,
+        year=year,
+        last_shift=last_shift,
+        logs=logs,
+        error=error)
 
 
 @admin.route('/schedule_maintenance')

@@ -42,7 +42,7 @@ class Data_Import:
                     value_errors.append(ve)
                     pass
         if not data:
-            print(value_errors)
+            self.log['value_errors'] = value_errors
 
         return data
 

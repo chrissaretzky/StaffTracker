@@ -13,3 +13,4 @@ class Schedule_year(db.Model):
     pay_periods = db.relationship('Pay_period', backref='year')
     avg_periods = db.relationship('Avg_period', backref='year')
     stats = db.relationship('Stat_day', backref='year')
+    import_logs = db.relationship('Import_log', backref='year')

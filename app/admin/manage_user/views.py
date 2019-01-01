@@ -4,7 +4,7 @@ from flask_login import current_user, login_required
 from app import db
 from app.admin.manage_user.forms import (
     ChangeAccountTypeForm, ChangeTeamForm, EditUserForm, EditShiftForm,
-    EditTimeoffForm, EditUserScheduleForm, AddUserScheduleForm)
+    EditTimeoffForm, EditUserScheduleForm, AddUserScheduleForm, DeactivateUser)
 from app.decorators import admin_required
 from app.models import (User, User_schedule, Shift, Schedule_year, Timeoff)
 from datetime import datetime
@@ -337,22 +337,31 @@ def change_team(user_id):
         'admin/manage_user/user_info.html', user=user, form=form)
 
 
-@manage_user.route('/<int:user_id>/deactivate')
+@manage_user.route('/<int:user_id>/deactivate', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def deactivate_user(user_id):
+    form = DeactivateUser()
+    user = User.query.filter_by(id=user_id).first()
     if current_user.id == user_id:
         flash(
-            'You cannot dactivate yourself dumbass. Please ask another '
+            'You cannot dactivate yourself. Please ask another '
             'administrator to do this.', 'error')
     else:
-        user = User.query.filter_by(id=user_id).first()
-        if user is None:
-            abort(404)
-        user.active = False
-        db.session.commit()
-        flash('Deactivate user %s.' % user.full_name(), 'success')
-    return redirect(url_for('manage_user.user_info', user_id=user.id))
+        if form.validate_on_submit():
+            user = User.query.filter_by(id=user_id).first()
+            if user is None:
+                abort(404)
+            user.active = False
+            user.term_date = form.term_date.data
+            db.session.commit()
+            flash('Deactivate user %s.' % user.full_name(), 'success')
+            url_for('manage_user.user_info', user_id=user.id)
+    if user.active:
+        return render_template(
+            'admin/manage_user/user_info.html', user=user, form=form)
+    return render_template(
+        'admin/manage_user/user_info.html', user=user, form=None)
 
 
 @manage_user.route('/<int:user_id>/reactivate')
@@ -368,6 +377,7 @@ def reactivate_user(user_id):
         if user is None:
             abort(404)
         user.active = True
+        user.term_date = None
         db.session.commit()
         flash('reactivated user %s.' % user.full_name(), 'success')
     return redirect(url_for('manage_user.user_info', user_id=user.id))

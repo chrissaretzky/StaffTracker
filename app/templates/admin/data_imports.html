@@ -32,13 +32,46 @@
                 {{ navigation(endpoints) }}
             </div>
             <div class="eight wide column">
+                <div>Year set to <strong>{{ year.year }}</strong>.  All shifts will be attached to the current year
+                <br>Databse is up to date <strong>{{last_shift.end}}</strong><br><br>
+                <strong>Please Read Before Running Import</strong><br>
+                This converts a staffhub schedule export and into a standard data structure and imports into this webapps backend database.  The excel sheet must meet very specific requirements in order for this to run, if you encounter validation problems please see Chris.<br><br>When running the import all current database shift and timeoff records within the date range of the import will be remove and re-added with the data genaerated by the provided excel sheet.  Except for shift or time off records that have been manually entered through the web interface.  This can cause problem if you are making changes to the excel sheet prior to import. Because of the complicated nature of this import and because of the real potential to damage the database by running this, the backend procedures backup up and archive a copy of the database before running</div><br>
                 {% if form %}
-                    <div class="red">Current year is {{ year.year }}.  All shifts will be attached to the current year
-                    <br>Databse is up to date {{last_shift.end}}</div><br>
-                    {{ form.csrf_token }}
-                    {{ f.render_form(form) }}
+                    {{ f.render_form(form)}}
+                {% endif %}
+
+                <div id='info' class="eight wide column"><br>
+                {% if error %}
+                    <p>Sheet is not valid</p>
+                    {{error}}
+                {% else %}
+                    <p>This may take time, but please remain on this page until the completed, you will see your import show up in the list below when it's finished.  You can continue to work in other areas of the site in a new tab.  The very final step of this import is to commit all changes to the database, so if you do accidently close the page, it's not going cause any problem you just have to re-do it</p>
+                {% endif %}
+                </div><br>
+                <strong>The log files for every import are stored in detail in the import_logs table, below is a summary of that table</strong><br>
+                {% if logs %}
+                    <table>
+                        <thead>
+                            <th>Run Date</th>
+                            <th>Beginning</th>
+                            <th>End</th>
+                            <th>Records</th>
+                        </thead>
+                        <tbody>
+                    {% for l in logs %}
+                        <tr>
+                            <td>{{ l.run_date }}</td>
+                            <td>{{ l.start }}</td>
+                            <td>{{ l.end }}</td>
+                            <td>{{ l.records }}</td>
+                        </tr>
+                    {% endfor %}
+                       </tbody>
+                    </table>
                 {% endif %}
             </div>
         </div>
     </div>
+    <script type="text/javascript">
+    </script>
 {% endblock %}

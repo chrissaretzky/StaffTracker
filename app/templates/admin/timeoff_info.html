@@ -1,41 +1,52 @@
-{% extends 'layouts/manage_user.html' %}
+{% extends 'layouts/base.html' %}
 
-{% macro timeoff_info(timeooff) %}
-    <div class="row">
-        <button onclick="window.location.href = '{{ url_for('manage_user.new_timeoff', user_id=user.id) }}';" class="ui button basic">Add Timeoff</button>
-    </div>
-    <div class="row">
-        <div id="s" class="four fields">
-            <div class="ui input date_picker"><input placeholder="Start" type="text" id="min" /></div><div class="ui input date_picker"><input placeholder="End" type="text" id="max" /></div>
-        </div><br>
-        <div class="six fields">
-            <div class="ui label">
-              Total Vacation
-              <div id="vacation" class="detail"></div>
-            </div>
-            <div class="ui label">
-              Total Personal
-              <div id="personal" class="detail"></div>
+{% block content %}
+    <div class="ui stackable grid container">
+        <div class="sixteen wide tablet twelve wide computer centered column">
+            <a class="ui basic compact button" href="{{ url_for('admin.index') }}">
+                <i class="caret left icon"></i>
+                Back to dashboard
+            </a><br><br>
+            <div class="row">
+                <div id="s" class="four fields">
+                    <div class="ui input date_picker"><input placeholder="Start" type="text" id="min" /></div><div class="ui input date_picker"><input placeholder="End" type="text" id="max" /></div>
+                </div><br>
+                <div class="six fields">
+                    <div class="ui label">
+                      Total Vacation
+                      <div id="vacation" class="detail"></div>
+                    </div>
+                    <div class="ui label">
+                      Total Personal
+                      <div id="personal" class="detail"></div>
+                    </div>
+                </div>
+            </div><br>
+            <div>
+                <table class="ui celled selectable table shift_records_table">
+                    <thead>
+                        <tr>
+                            <th>Day<i class="caret down icon"></i></th>
+                            <th>Employee<i class="caret down icon"></i></th>
+                            <th>Type<i class="caret down icon"></i></th>
+                            <th>Team<i class="caret down icon"></i></th>
+                            <th hidden>Role<i class="caret down icon"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for t in timeoff %}
+                        <tr onclick="window.location.href = '{{ url_for('manage_user.edit_timeoff', user_id=t.schedule.user.id, timeoff_id=t.id) }}';">
+                            <td>{{ t.dayof }}</td>
+                            <td>{{ t.schedule.user.first_name}} {{ t.schedule.user.last_name[0] }}</td>
+                            <td>{{ t.type.name }}</td>
+                            <td>{{ t.schedule.user.team.name}}</td>
+                            <td hidden>{{ t.schedule.user.role.name}}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-    </div><br>
-    <div>
-        <table class="ui celled selectable table shift_records_table">
-            <thead>
-                <tr>
-                    <th>Day<i class="caret down icon"></i></th>
-                    <th>Type<i class="caret down icon"></i></th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for t in timeoff %}
-                <tr onclick="window.location.href = '{{ url_for('manage_user.edit_timeoff', user_id=t.schedule.user.id, timeoff_id=t.id) }}';">
-                    <td>{{ t.dayof }}</td>
-                    <td>{{ t.type.name }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
     </div>
     <script type="text/javascript">
         $(document).ready( function () {
@@ -53,7 +64,9 @@
                             ">"+
                         ">",
                 initComplete: function () {
-                    createSelectColFilter(this, 1)
+                    createSelectColFilter(this, 2)
+                    createSelectColFilter(this, 3)
+                    createSelectColFilter(this, 4)
                     createRangeSelector(this)
                     }
                 })
@@ -80,11 +93,19 @@
           total = 0
 
           data.each(function(d){
-            if (types.includes(d[1])){
+            if (types.includes(d[2])){
                 total += 1
             }
           })
           return total
+        }
+
+        function filterByDateByOTPaid(value){
+          if ( filterByDate(value) && value[6] == 'True')
+          {
+              return true;
+          }
+          return false;
         }
 
         function createSelectColFilter(dt, col){
@@ -117,12 +138,5 @@
             })
         }
     </script>
-{% endmacro %}
 
-{% block manage_user %}
-    {% if form %}
-        {{ f.render_form(form) }}
-    {% else %}
-        {{ timeoff_info(shifts) }}
-    {% endif %}
 {% endblock %}
