@@ -54,11 +54,6 @@ def create_app(config_name):
     assets_env.register('vendor_css', vendor_css)
     assets_env.register('vendor_js', vendor_js)
 
-    # Configure SSL if platform supports it
-    if not app.debug and not app.testing and not app.config['SSL_DISABLE']:
-        from flask_sslify import SSLify
-        SSLify(app)
-
     # Create app blueprints
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)

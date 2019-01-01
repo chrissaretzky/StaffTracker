@@ -10,9 +10,8 @@ from app.models import Role, User, Team, Timeoff_Type
 from config import Config
 from tests.setup import create_demo_data
 
-app = create_app(os.getenv('FLASK_CONFIG') or 'default')
+app = create_app(os.getenv('FLASK_CONFIG') or 'production')
 manager = Manager(app)
-migrate = Migrate(app, db)
 
 
 def make_shell_context():
@@ -61,7 +60,6 @@ def add_fake_data(number_users):
 def setup_dev():
     """Runs the set-up needed for local development."""
     setup_general()
-    create_demo_data()
 
 
 @manager.command

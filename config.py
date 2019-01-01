@@ -58,14 +58,13 @@ class TestingConfig(Config):
 
 
 class ProductionConfig(Config):
+    ASSETS_DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir, 'data.sqlite')
-    SSL_DISABLE = (os.environ.get('SSL_DISABLE') or 'True') == 'True'
 
     @classmethod
     def init_app(cls, app):
-        Config.init_app(app)
-        assert os.environ.get('SECRET_KEY'), 'SECRET_KEY IS NOT SET!'
+        print('RUNNING PRODUCTION.')
 
 
 config = {
