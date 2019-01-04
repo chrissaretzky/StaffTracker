@@ -1,3 +1,4 @@
+
 {% extends 'layouts/user.html' %}
 
 {% block user %}
@@ -22,11 +23,19 @@
         <tbody>
             {% for s in schedules %}
                 {% if s.year.iscurrent %}
-                    <tr>
+                    <tr onclick="window.location.href ='{{url_for('user.schedule', schedule_id=s.id)}}'">
                 {% else %}
-                    <tr class="inactive">
+                    <tr class="inactive" onclick="window.location.href ='{{url_for('user.schedule', schedule_id=s.id)}}'">
                 {% endif %}
-                <td>{{s.year.year}}</td>
+                {% if s.shiftlength > 8 %}
+                <td class="ui icon" data-tooltip="Vacation has been scaled down to accomodate {{s.shiftlength}} hour shifts. Personal days are still represented as 8 hours">
+                    {{s.year.year}}
+                    <i class="question circle icon"></i>
+                {% else %}
+                <td class="ui icon">
+                    {{s.year.year}}
+                {% endif %}
+                </td>
                 <td>{{s.available_vacation}}</td>
                 <td>{{s.used_personal}}</td>
                 <td>{{s.isparttime}}</td>

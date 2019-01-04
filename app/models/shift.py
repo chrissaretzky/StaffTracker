@@ -1,4 +1,5 @@
 from .. import db
+from sqlalchemy.ext.hybrid import hybrid_property
 
 
 class Shift(db.Model):
@@ -27,7 +28,12 @@ class Shift(db.Model):
     def end_time(self):
         return self.end.strftime("%I:%M%p")
 
-    @property
+    @hybrid_property
     def hours(self):
         t = self.end - self.start
+        return t.total_seconds() / 3600
+
+    @hours.expression
+    def hours(cls):
+        t = cls.end - cls.start
         return t.total_seconds() / 3600

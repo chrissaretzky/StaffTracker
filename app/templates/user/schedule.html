@@ -1,0 +1,15 @@
+{% extends 'layouts/user.html' %}
+
+{% block user %}
+    <div class="row">
+
+    </div>
+    <table class="ui compact definition table">
+        <tr><td>Carried Vacation Days</td><td>{{ schedule.carriedvacation }}</td></tr>
+        <tr><td>Entitled Vacation Days</td><td>{{ schedule.entitledvacation }}</td></tr>
+        <tr><td>Entitled Personal Days</td><td>{{ schedule.entitledpersonal }}</td></tr>
+        <tr><td>Part-Time</td><td>{{ schedule.ispartime }}</td></tr>
+        <tr><td>Averaging</td><td>{{ schedule.isaveraging }}</td></tr>
+        <tr><td>Normal Shift Length</td><td>{{ schedule.shiftlength }}</td></tr>
+    </table>
+{% endblock %}

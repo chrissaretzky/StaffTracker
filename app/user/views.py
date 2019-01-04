@@ -11,7 +11,17 @@ user = Blueprint('user', __name__)
 @login_required
 def index():
     user = User.query.filter_by(id=current_user.id).first()
-    return render_template('user/index.html', user=user)
+    schedules = User_schedule.query.filter_by(user=user)
+    return render_template('user/index.html', user=user, schedules=schedules)
+
+@user.route('/schedule/<int:schedule_id>')
+@login_required
+def schedule(schedule_id):
+    user = User.query.filter_by(id=current_user.id).first()
+    schedule = User_schedule.query.filter_by(user=user).filter_by(id=schedule_id).first()
+    if schedule is None:
+        return redirect(url_for('user.index'))
+    return render_template('user/schedule.html', user=user, schedule=schedule)
 
 
 @user.route('/shift_info')

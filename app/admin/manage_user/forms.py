@@ -14,7 +14,7 @@ from math import ceil
 
 
 def get_remaining_year_ratio(num):
-    return int(ceil(num * ((1 / (datetime.now().month / 13) - 1))))
+    return int(ceil(num * ((13 - datetime.now().month) / 12)))
 
 
 class EditUserScheduleForm(Form):
@@ -24,7 +24,7 @@ class EditUserScheduleForm(Form):
         'Entitled Vacation', default=get_remaining_year_ratio(15))
 
     entitledpersonal = IntegerField(
-        'Personal Days', default=get_remaining_year_ratio(9))
+        'Personal Days', default=get_remaining_year_ratio(10))
 
     isparttime = BooleanField('Part-Time', default=False)
     isaveraging = BooleanField('Averaging Agreement', default=False)

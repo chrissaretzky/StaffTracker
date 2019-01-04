@@ -16,7 +16,7 @@ admin = Blueprint('admin', __name__)
 
 def backup_db():
     subprocess.call(
-        'C:\\Users\\Chris\\OneDrive - Squirrel Systems\\Projects\\Staff_Tracker\\backup\\backup.bat'
+        'C:\\Users\\csaretzky\\staff_tracker\\StaffTracker\\backup\\backup.bat'
     )
 
 

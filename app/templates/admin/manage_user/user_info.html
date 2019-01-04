@@ -22,6 +22,7 @@
             <tr>
                 <th></th>
                 <th>Available Vacation</th>
+                <th>Banked OT</th>
                 <th>Personal Days Used</th>
                 <th>Parttime</th>
                 <th>Averaging</th>
@@ -35,12 +36,21 @@
                 {% else %}
                     <tr class="inactive" onclick="window.location.href = '{{ url_for('manage_user.edit_schedule', user_id=user.id, sched_id=s.id) }}';">
                 {% endif %}
-                <td>{{s.year.year}}</td>
+                {% if s.shiftlength > 8 %}
+                <td class="ui icon" data-tooltip="Your time off has been scaled down to accomodate {{s.shiftlength}} hour shifts">
+                    {{s.year.year}}
+                    <i class="question circle icon"></i>
+                {% else %}
+                <td class="ui icon">
+                    {{s.year.year}}
+                {% endif %}
+                </td>
                 <td>{{s.available_vacation}}</td>
+                <td>{{s.banked_ot}}</td>
                 <td>{{s.used_personal}}</td>
                 <td>{{s.isparttime}}</td>
                 <td>{{s.isaveraging}}</td>
-                <td>{{s.shiftlength}}</td>
+                <td>{{s.shiftlength}}</td> 
             </tr>
             {% endfor %}
         </tbody>
