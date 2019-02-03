@@ -8,7 +8,7 @@ from app.decorators import admin_required
 from app.models import (EditableHTML, Role, User, User_schedule, Shift,
                         Schedule_year, Timeoff, Team, Timeoff_Type, Import_log)
 from app.admin.utils.staffhub_import import Shifts_Import, TimeOff_Import
-
+from datetime import timedelta, datetime
 import subprocess
 
 admin = Blueprint('admin', __name__)
@@ -56,6 +56,15 @@ def import_schedule_data(file, year):
                     db.session.add(shift)
 
         timeoff_imp = TimeOff_Import(file, year)
+        rec_range = [
+            timeoff_imp.valid_data[0]['dayof'],
+            timeoff_imp.valid_data[len(timeoff_imp.valid_data) - 1]['dayof']
+        ]
+
+        db.session.query(Timeoff).filter(Timeoff.dayof >= rec_range[0]).filter(
+            Timeoff.dayof <= rec_range[1]).delete()
+        db.session.commit()
+
         for d in timeoff_imp.valid_data:
             user = User.query.filter_by(first_name=d['first_name']).filter_by(
                 last_name=d['last_name']).first()
@@ -73,6 +82,7 @@ def import_schedule_data(file, year):
                             name=d['type']).first())
                     db.session.add(timeoff)
         log = Import_log(
+            run_date=datetime.now(),
             start=rec_range[0],
             end=rec_range[1],
             schema_errors=shift_imp.log['schema_errors'],
@@ -148,16 +158,96 @@ def registered_users():
         'admin/registered_users.html', users=users, roles=roles, teams=teams)
 
 
-@admin.route('/shift_info')
+
+@admin.route('/shift_info', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def shift_info():
-    shifts = db.session.query(Shift).join(User_schedule).join(
-        Schedule_year).filter(Schedule_year.iscurrent == True).all()
     roles = Role.query.all()
     teams = Team.query.all()
+    years = Schedule_year.query.order_by(Schedule_year.iscurrent.desc()).all()
+
+    if request.method == 'POST':
+        year_id = request.form['year']
+    else:
+        year_id = Schedule_year.query.filter_by(iscurrent=True).first().id
+    year_id = 1
+
+    shift_qry = db.session.query(Shift). \
+                join(User_schedule). \
+                join(User). \
+                join(Team). \
+                join(Role). \
+                join(Schedule_year). \
+                filter(Schedule_year.id == year_id)
+
+    shift_low = shift_qry.order_by(Shift.start.asc()).first()
+    shift_high = shift_qry.order_by(Shift.end.desc()).first()
+    weeks = get_weeks(shift_low.start, shift_high.end)
+    week_stats = []
+    for w in weeks:
+        w_stats = {
+            'week':w[0].strftime('%x'),
+            'SC_R':0,
+            'SC_IC':0,
+            'SC_OTB':0,
+            'SC_OTP':0,
+            'SC_T':0,
+            'SC_ADMIN': 0,
+            'CS_R':0,
+            'CS_ADMIN':0,
+            'ES_R':0,
+            'ES_ADMIN':0,
+            'ATS_R':0,
+            'ATS_ADMIN':0
+        }
+        qry = shift_qry.filter(Shift.start >= w[0]).filter(Shift.end <= w[1]).all()
+        for r in qry:
+            if r.schedule.user.team.name == 'SC':
+                if r.schedule.user.role.name == 'Administrator':
+                    w_stats['SC_ADMIN'] += r.hours
+                if r.isic:
+                    w_stats['SC_IC'] += r.hours
+                if r.otbanked:
+                    w_stats['SC_OTB'] += r.hours
+                if r.otpaid:
+                    w_stats['SC_OTP'] += r.hours
+                if r.training:
+                    w_stats['SC_T'] += r.hours
+                w_stats['SC_R'] += r.hours
+            if r.schedule.user.team.name == 'CS':
+                if r.schedule.user.role.name == 'Administrator':
+                    w_stats['CS_ADMIN'] += r.hours
+                w_stats['CS_R'] += r.hours
+            if r.schedule.user.team.name == 'ES':
+                if r.schedule.user.role.name == 'Administrator':
+                    w_stats['ES_ADMIN'] += r.hours
+                w_stats['ES_R'] += r.hours
+            if r.schedule.user.team.name == 'ATS':
+                if r.schedule.user.role.name == 'Administrator':
+                    w_stats['ATS_ADMIN'] += r.hours
+                w_stats['ATS_R'] += r.hours
+            
+        week_stats.append(w_stats)
     return render_template(
-        'admin/shift_info.html', shifts=shifts, roles=roles, teams=teams)
+        'admin/shift_info.html', week_stats=week_stats, roles=roles, teams=teams, years=years)
+
+def get_weeks(start, end):
+    weeks = []
+    if start.isoweekday() == 7:
+        week_e = start + timedelta(6)
+        weeks.append((start, week_e))
+    else:
+        week_e = start + timedelta(6 - start.isoweekday())
+        weeks.append((start, start + timedelta(6)))
+    
+    d_iter = week_e + timedelta(1)
+    while(d_iter < end):
+        week_e = d_iter + timedelta(6)
+        weeks.append((d_iter, week_e))
+        d_iter = week_e + timedelta(1)
+    return weeks
+        
 
 
 @admin.route('/timeoff_info')
